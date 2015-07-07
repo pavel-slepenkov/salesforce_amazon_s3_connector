@@ -1,20 +1,25 @@
 
 public class AmazonS3Connector {
 
-    private final String emptyStringHash = 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855';
-    private final String AMAZON_S3_URL = '.s3.amazonaws.com';
+    private final String emptyStringHash             = 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855';
+    private final String AMAZON_S3_URL               = '.s3.amazonaws.com';
+    private final String GENERATE_MAC_ALGORITHM_NAME = 'hmacSHA256';
+    private final String ENCODING_SCHEME_UTF8 = 'UTF-8';
+    private final String HTTP_METHOD_PUT = 'PUT';
+    private final String HTTP_METHOD_GET = 'GET';
+
     @testVisible
     private AWS_IAM_UserCredentials__c currentUserCreds;
     @testVisible
-    private String dateKey          = System.now().formatGMT('yyyyMMdd');
+    private String dateKey = System.now().formatGMT('yyyyMMdd');
     @testVisible
-    private String dtKey            = System.now().formatGMT('yyyyMMdd\'T\'HHmmss\'Z\'');
+    private String dtKey = System.now().formatGMT('yyyyMMdd\'T\'HHmmss\'Z\'');
     @testVisible
-    private String dtKeyEEE         = System.now().formatGMT('EEE, d MMM yyyy HH:mm:ss z');
+    private String dtKeyEEE = System.now().formatGMT('EEE, d MMM yyyy HH:mm:ss z');
     @testVisible
-    private String bucketName       = 'logdog';
+    private String bucketName = 'logdog';
     @testVisible
-    private String region           = 'eu-west-1';
+    private String region = 'eu-west-1';
     private String protocol = 'https://';
 
     private String scope {
@@ -41,8 +46,8 @@ public class AmazonS3Connector {
 
     String putObjectCanonicalRequest {
         get {
-            return ('PUT' + '\n'
-                + '/' + EncodingUtil.urlEncode(this.fileName, 'UTF-8') + '\n\n'
+            return (HTTP_METHOD_PUT + '\n'
+                + '/' + EncodingUtil.urlEncode(this.fileName, ENCODING_SCHEME_UTF8) + '\n\n'
                 + 'date'.toLowerCase() + ':'+ dtKeyEEE.trim() + '\n'//  + dtKey + '\n'//+ Datetime.now().format('EEE, d MMM yyyy HH:mm:ss z') + '\n' //Fri, 24 May 2013 00:00:00 GMT
                 + 'host'.toLowerCase() + ':' + (bucketName + AMAZON_S3_URL).trim() + '\n'
                 + 'x-amz-content-sha256'.toLowerCase() + ':' +  this.fileContentHash + '\n'
@@ -55,7 +60,7 @@ public class AmazonS3Connector {
 
     String getServiceCanonicalRequest {
         get {
-            return ('GET' + '\n'
+            return (HTTP_METHOD_PUT + '\n'
                 + '/' + '\n\n'
                 + 'host'.toLowerCase() + ':' + 's3.amazonaws.com'.trim() + '\n'
                 + 'x-amz-content-sha256'.toLowerCase() + ':' +  emptyStringHash + '\n'
@@ -67,10 +72,10 @@ public class AmazonS3Connector {
 
     String getBucketCanonicalRequest {
         get {
-            return ('GET' + '\n'
+            return (HTTP_METHOD_PUT + '\n'
                 + '/' + '\n'
-                + EncodingUtil.urlEncode('max-keys', 'UTF-8') + '=' + EncodingUtil.urlEncode('2', 'UTF-8')
-                + '&' + EncodingUtil.urlEncode('prefix', 'UTF-8') + '=' + EncodingUtil.urlEncode('J', 'UTF-8')  + '\n'
+                + EncodingUtil.urlEncode('max-keys', ENCODING_SCHEME_UTF8) + '=' + EncodingUtil.urlEncode('2', ENCODING_SCHEME_UTF8)
+                + '&' + EncodingUtil.urlEncode('prefix', ENCODING_SCHEME_UTF8) + '=' + EncodingUtil.urlEncode('J', ENCODING_SCHEME_UTF8)  + '\n'
                 + 'host'.toLowerCase() + ':' + (bucketName + AMAZON_S3_URL).trim() + '\n'
                 + 'x-amz-content-sha256'.toLowerCase() + ':' +  emptyStringHash + '\n'
                 + 'x-amz-date'.toLowerCase() + ':' + dtKey + '\n\n'
@@ -123,16 +128,14 @@ public class AmazonS3Connector {
         // Task 3: Calculate Signature
         //signing key = HMAC-SHA256(HMAC-SHA256(HMAC-SHA256(HMAC-SHA256("AWS4" + "<YourSecretAccessKey>","20130524"),"us-east-1"),"s3"),"aws4_request")
         System.debug('\n-------------------------------  Task 3: Calculate Signature --------------------------------');
-        Blob dateKey1             = Crypto.generateMac('hmacSHA256', blob.valueOf(dateKey), blob.valueOf('AWS4' + this.currentUserCreds.Secret_Access_Key__c));
-        Blob dateRegionKey        = Crypto.generateMac('hmacSHA256', blob.valueOf(region), dateKey1);
-        Blob dateRegionServiceKey = Crypto.generateMac('hmacSHA256', blob.valueOf('s3'), dateRegionKey);
-        Blob signingKey           = Crypto.generateMac('hmacSHA256', blob.valueOf('aws4_request'), dateRegionServiceKey);
-
-        String signature = EncodingUtil.convertToHex(Crypto.generateMac('hmacSHA256', blob.valueOf(generateStringToSign(operation)), signingKey));
+        Blob dateKey1             = Crypto.generateMac(GENERATE_MAC_ALGORITHM_NAME, blob.valueOf(dateKey), blob.valueOf('AWS4' + this.currentUserCreds.Secret_Access_Key__c));
+        Blob dateRegionKey        = Crypto.generateMac(GENERATE_MAC_ALGORITHM_NAME, blob.valueOf(region), dateKey1);
+        Blob dateRegionServiceKey = Crypto.generateMac(GENERATE_MAC_ALGORITHM_NAME, blob.valueOf('s3'), dateRegionKey);
+        Blob signingKey           = Crypto.generateMac(GENERATE_MAC_ALGORITHM_NAME, blob.valueOf('aws4_request'), dateRegionServiceKey);
+        String signature = EncodingUtil.convertToHex(Crypto.generateMac(GENERATE_MAC_ALGORITHM_NAME, blob.valueOf(generateStringToSign(operation)), signingKey));
         System.debug('\n Signature ==> ' + signature);
         return signature;
     }
-
 
     @testVisible
     private String calculateAuthorizationHeader(AmazonS3ServiceOperations operation) {
@@ -161,7 +164,7 @@ public class AmazonS3Connector {
         // Set request's specific variable
         this.region = 'us-east-1';
         HttpRequest req = new HttpRequest();
-        req.setMethod('GET');
+        req.setMethod(HTTP_METHOD_PUT);
         req.setEndpoint(this.protocol + 's3.amazonaws.com');
         req.setHeader('Host', 's3.amazonaws.com');
         req.setHeader('Authorization', calculateAuthorizationHeader(AmazonS3ServiceOperations.getService));
@@ -171,11 +174,11 @@ public class AmazonS3Connector {
         return performHttpRequest(req);
     }
 
-    public HttpResponse getBucket(String bucketName1) {
+    public HttpResponse getBucket(String bucketNameParam) {
         HttpRequest req = new HttpRequest();
-        req.setMethod('GET');
-        req.setEndpoint(this.protocol + bucketName1 + AMAZON_S3_URL + '/?max-keys=2&prefix=J');
-        req.setHeader('Host', bucketName1 + AMAZON_S3_URL);
+        req.setMethod(HTTP_METHOD_PUT);
+        req.setEndpoint(this.protocol + bucketNameParam + AMAZON_S3_URL + '/?max-keys=2&prefix=J');
+        req.setHeader('Host', bucketNameParam + AMAZON_S3_URL);
         req.setHeader('Authorization', calculateAuthorizationHeader(AmazonS3ServiceOperations.getBucket));
         req.setHeader('x-amz-date', dtKey);
         req.setHeader('x-amz-content-sha256', emptyStringHash);
@@ -187,7 +190,7 @@ public class AmazonS3Connector {
         this.fileName = fName;
         this.fileContentHash = EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256', blob.valueof(data)));
         HttpRequest req = new HttpRequest();
-        req.setMethod('PUT');
+        req.setMethod(HTTP_METHOD_PUT);
         req.setEndpoint(this.protocol + bucket + AMAZON_S3_URL + '/' + this.fileName);
         req.setBodyAsBlob(Blob.valueOf(data));
         req.setHeader('Host', bucket + AMAZON_S3_URL);

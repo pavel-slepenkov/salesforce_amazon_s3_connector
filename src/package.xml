@@ -4,6 +4,10 @@
         <members>*</members>
         <name>ApexClass</name>
     </types>
+    <types>
+        <members>AWS_IAM_UserCredentials__c</members>
+        <name>CustomObject</name>
+    </types>
     <version>34.0</version>
 </Package>
 							

@@ -37,25 +37,25 @@ public class AmazonS3ConnectorTest {
 
     @isTest
     private static void validateSignatureCalculationForGetBucket() {
-        sfl__AWS_IAM_UserCredintials__c creds =
-            new sfl__AWS_IAM_UserCredintials__c(name = 'Test',
-                                                sfl__Secret_Access_Key__c = 'wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY',
-                                                sfl__Access_Key_Id__c = 'AKIAIOSFODNN7EXAMPLE');
+        AWS_IAM_UserCredentials__c creds =
+            new AWS_IAM_UserCredentials__c(name = 'Test',
+                                                Secret_Access_Key__c = 'wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY',
+                                                Access_Key_Id__c = 'AKIAIOSFODNN7EXAMPLE');
         insert creds;
         AmazonS3Connector connector = new AmazonS3Connector('Test');
         connector.dateKey          = mockDate;
         connector.dtKey            = mockDateTime;
         connector.bucketName       = mockBucketName;
         connector.region           = mockRegion;
-        System.assertEquals('34b48302e7b5fa45bde8084f4b7868a86f0a534bc59db6670ed5711ef69dc6f7', connector.calculateSignature(sfl.AmazonS3ServiceOperations.getBucket));
+        System.assertEquals('34b48302e7b5fa45bde8084f4b7868a86f0a534bc59db6670ed5711ef69dc6f7', connector.calculateSignature(AmazonS3ServiceOperations.getBucket));
     }
 
     @isTest
     private static void validateSignatureCalculationForPutObject() {
-        sfl__AWS_IAM_UserCredintials__c creds =
-            new sfl__AWS_IAM_UserCredintials__c(name = 'Test',
-                                                sfl__Secret_Access_Key__c = 'wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY',
-                                                sfl__Access_Key_Id__c = 'AKIAIOSFODNN7EXAMPLE');
+        AWS_IAM_UserCredentials__c creds =
+            new AWS_IAM_UserCredentials__c(name = 'Test',
+                                                Secret_Access_Key__c = 'wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY',
+                                                Access_Key_Id__c = 'AKIAIOSFODNN7EXAMPLE');
         insert creds;
         AmazonS3Connector connector = new AmazonS3Connector('Test');
         connector.dateKey          = mockDate;
@@ -65,8 +65,8 @@ public class AmazonS3ConnectorTest {
         connector.region           = mockRegion;
         connector.fileName         = 'test$file.text';
         connector.fileContentHash = EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256', blob.valueof('Welcome to Amazon S3.')));
-        System.assert(connector.generateStringToSign(sfl.AmazonS3ServiceOperations.putObject).contains('9e0e90d9c76de8fa5b200d8c849cd5b8dc7a3be3951ddb7f6a76b4158342019d'));
-        System.assertEquals('98ad721746da40c64f1a55b78f14c238d841ea1380cd77a1b5971af0ece108bd', connector.calculateSignature(sfl.AmazonS3ServiceOperations.putObject));
+        System.assert(connector.generateStringToSign(AmazonS3ServiceOperations.putObject).contains('9e0e90d9c76de8fa5b200d8c849cd5b8dc7a3be3951ddb7f6a76b4158342019d'));
+        System.assertEquals('98ad721746da40c64f1a55b78f14c238d841ea1380cd77a1b5971af0ece108bd', connector.calculateSignature(AmazonS3ServiceOperations.putObject));
     }
 
 

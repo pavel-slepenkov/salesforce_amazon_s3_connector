@@ -3,7 +3,7 @@ public class AmazonS3Connector {
 
     private String emptyStringHash = 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855';
     @testVisible
-    private sfl__AWS_IAM_UserCredintials__c currentUserCreds;
+    private AWS_IAM_UserCredentials__c currentUserCreds;
     @testVisible
     private String dateKey          = System.now().formatGMT('yyyyMMdd');
     @testVisible
@@ -78,23 +78,23 @@ public class AmazonS3Connector {
         }
     }
 
-    private String getCanonicalRequest(sfl.AmazonS3ServiceOperations operation) {
-        if (operation == sfl.AmazonS3ServiceOperations.getService) {
+    private String getCanonicalRequest(AmazonS3ServiceOperations operation) {
+        if (operation == AmazonS3ServiceOperations.getService) {
             return getServiceCanonicalRequest;
-        } else if (operation == sfl.AmazonS3ServiceOperations.getBucket) {
+        } else if (operation == AmazonS3ServiceOperations.getBucket) {
             return getBucketCanonicalRequest;
-        } else if (operation == sfl.AmazonS3ServiceOperations.putObject) {
+        } else if (operation == AmazonS3ServiceOperations.putObject) {
             return putObjectCanonicalRequest;
         }
         return null;
     }
 
     private Map<AmazonS3ServiceOperations, String> signedHeaderByOperationName = new Map<AmazonS3ServiceOperations, String> {
-        sfl.AmazonS3ServiceOperations.getService
+        AmazonS3ServiceOperations.getService
             => ',SignedHeaders=host;x-amz-content-sha256;x-amz-date,Signature=',
-        sfl.AmazonS3ServiceOperations.getBucket
+        AmazonS3ServiceOperations.getBucket
             => ',SignedHeaders=host;x-amz-content-sha256;x-amz-date,Signature=',
-        sfl.AmazonS3ServiceOperations.putObject
+        AmazonS3ServiceOperations.putObject
             => ',SignedHeaders=date;host;x-amz-content-sha256;x-amz-date;x-amz-storage-class,Signature='
     };
 
@@ -103,7 +103,7 @@ public class AmazonS3Connector {
 /*    // Canonical request
     private Map<AmazonS3ServiceOperations, String> canonicalRequestByOperationName = new Map<AmazonS3ServiceOperations, String> {
         // Operations on Service
-        sfl.AmazonS3ServiceOperations.getService
+        AmazonS3ServiceOperations.getService
             => ('GET' + '\n'
                 + '/' + '\n\n'
                 + 'host'.toLowerCase() + ':' + 's3.amazonaws.com'.trim() + '\n'
@@ -123,17 +123,17 @@ public class AmazonS3Connector {
                 + 'host'.toLowerCase() + ';' + 'x-amz-content-sha256'.toLowerCase() + ';' + 'x-amz-date'.toLowerCase() + '\n'
                 +  emptyStringHash),
         // Operations on Objects
-        sfl.AmazonS3ServiceOperations.putObject
+        AmazonS3ServiceOperations.putObject
             => putObjectCanonicalRequest
     };*/
 
     public AmazonS3Connector(String IAMUserName) {
-        currentUserCreds = [SELECT Id, Name, sfl__Access_Key_Id__c, sfl__Secret_Access_Key__c FROM sfl__AWS_IAM_UserCredintials__c WHERE Name =: IAMUserName];
+        currentUserCreds = [SELECT Id, Name, Access_Key_Id__c, Secret_Access_Key__c FROM AWS_IAM_UserCredentials__c WHERE Name =: IAMUserName];
         System.debug(LoggingLevel.INFO, 'AmazonS3Connector has been constructed');
     }
 
     @testVisible
-    private String generateStringToSign(sfl.AmazonS3ServiceOperations operation) {
+    private String generateStringToSign(AmazonS3ServiceOperations operation) {
         // Task 2: Create a String to Sign
         System.debug(LoggingLevel.INFO, '\n-------------------------------  Task 2: Create a String to Sign --------------------------------');
         System.debug(LoggingLevel.INFO, 'canonicalRequest:__________________________________________________________\n' + getCanonicalRequest(operation));
@@ -147,11 +147,11 @@ public class AmazonS3Connector {
     }
 
     @testVisible
-    private String calculateSignature(sfl.AmazonS3ServiceOperations operation) {
+    private String calculateSignature(AmazonS3ServiceOperations operation) {
         // Task 3: Calculate Signature
         //signing key = HMAC-SHA256(HMAC-SHA256(HMAC-SHA256(HMAC-SHA256("AWS4" + "<YourSecretAccessKey>","20130524"),"us-east-1"),"s3"),"aws4_request")
         System.debug('\n-------------------------------  Task 3: Calculate Signature --------------------------------');
-        Blob dateKey1             = Crypto.generateMac('hmacSHA256', blob.valueOf(dateKey), blob.valueOf('AWS4' + this.currentUserCreds.sfl__Secret_Access_Key__c));
+        Blob dateKey1             = Crypto.generateMac('hmacSHA256', blob.valueOf(dateKey), blob.valueOf('AWS4' + this.currentUserCreds.Secret_Access_Key__c));
         Blob dateRegionKey        = Crypto.generateMac('hmacSHA256', blob.valueOf(region), dateKey1);
         Blob dateRegionServiceKey = Crypto.generateMac('hmacSHA256', blob.valueOf('s3'), dateRegionKey);
         Blob signingKey           = Crypto.generateMac('hmacSHA256', blob.valueOf('aws4_request'), dateRegionServiceKey);
@@ -163,8 +163,8 @@ public class AmazonS3Connector {
 
 
     @testVisible
-    private String calculateAuthorizationHeader(sfl.AmazonS3ServiceOperations operation) {
-        String fullAuthHeader = 'AWS4-HMAC-SHA256 Credential=' + this.currentUserCreds.sfl__Access_Key_Id__c + '/' + scope
+    private String calculateAuthorizationHeader(AmazonS3ServiceOperations operation) {
+        String fullAuthHeader = 'AWS4-HMAC-SHA256 Credential=' + this.currentUserCreds.Access_Key_Id__c + '/' + scope
                                 + signedHeaderByOperationName.get(operation) + calculateSignature(operation);
         System.debug('\nfullAuthHeader ' + fullAuthHeader);
         return fullAuthHeader;
@@ -184,7 +184,7 @@ public class AmazonS3Connector {
         req.setMethod('GET');
         req.setEndpoint(this.protocol + 's3.amazonaws.com');
         req.setHeader('Host', 's3.amazonaws.com');
-        req.setHeader('Authorization', calculateAuthorizationHeader(sfl.AmazonS3ServiceOperations.getService));
+        req.setHeader('Authorization', calculateAuthorizationHeader(AmazonS3ServiceOperations.getService));
         req.setHeader('x-amz-date', dtKey);
         req.setHeader('x-amz-content-sha256', emptyStringHash);
         System.debug('\n\n request:\n' + req + '\n\n');
@@ -196,7 +196,7 @@ public class AmazonS3Connector {
         req.setMethod('GET');
         req.setEndpoint(this.protocol + bucketName1 + '.s3.amazonaws.com' + '/?max-keys=2&prefix=J');
         req.setHeader('Host', bucketName1 + '.s3.amazonaws.com');
-        req.setHeader('Authorization', calculateAuthorizationHeader(sfl.AmazonS3ServiceOperations.getBucket));
+        req.setHeader('Authorization', calculateAuthorizationHeader(AmazonS3ServiceOperations.getBucket));
         req.setHeader('x-amz-date', dtKey);
         req.setHeader('x-amz-content-sha256', emptyStringHash);
         System.debug('\n\n request:\n' + req + '\n\n');
@@ -213,7 +213,7 @@ public class AmazonS3Connector {
         req.setHeader('Host', bucket + '.s3.amazonaws.com');
         req.setHeader('date', Datetime.now().formatGMT('EEE, d MMM yyyy HH:mm:ss z'));
         req.setHeader('Content-Type', 'text/plain');
-        req.setHeader('Authorization', calculateAuthorizationHeader(sfl.AmazonS3ServiceOperations.putObject));
+        req.setHeader('Authorization', calculateAuthorizationHeader(AmazonS3ServiceOperations.putObject));
         req.setHeader('x-amz-date', dtKey);
         req.setHeader('x-amz-content-sha256', fileContentHash);
         req.setHeader('x-amz-storage-class', 'REDUCED_REDUNDANCY');

@@ -8,6 +8,13 @@
         <members>AWS_IAM_UserCredentials__c</members>
         <name>CustomObject</name>
     </types>
+    <types>
+        <members>AWS_IAM_UserCredentials__c</members>
+        <name>CustomTab</name>
+    </types>
+    <types>
+        <members>AWS_IAM_UserCredentials__c-Amazon S3 Credential Layout</members>
+        <name>Layout</name>
+    </types>
     <version>34.0</version>
 </Package>
-							

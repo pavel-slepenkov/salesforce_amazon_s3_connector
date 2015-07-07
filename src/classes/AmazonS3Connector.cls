@@ -1,7 +1,8 @@
 
 public class AmazonS3Connector {
 
-    private String emptyStringHash = 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855';
+    private final String emptyStringHash = 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855';
+    private final String AMAZON_S3_URL = '.s3.amazonaws.com';
     @testVisible
     private AWS_IAM_UserCredentials__c currentUserCreds;
     @testVisible
@@ -43,7 +44,7 @@ public class AmazonS3Connector {
             return ('PUT' + '\n'
                 + '/' + EncodingUtil.urlEncode(this.fileName, 'UTF-8') + '\n\n'
                 + 'date'.toLowerCase() + ':'+ dtKeyEEE.trim() + '\n'//  + dtKey + '\n'//+ Datetime.now().format('EEE, d MMM yyyy HH:mm:ss z') + '\n' //Fri, 24 May 2013 00:00:00 GMT
-                + 'host'.toLowerCase() + ':' + (bucketName + '.s3.amazonaws.com').trim() + '\n'
+                + 'host'.toLowerCase() + ':' + (bucketName + AMAZON_S3_URL).trim() + '\n'
                 + 'x-amz-content-sha256'.toLowerCase() + ':' +  this.fileContentHash + '\n'
                 + 'x-amz-date'.toLowerCase() + ':' + dtKey + '\n'
                 + 'x-amz-storage-class'.toLowerCase() + ':' + 'REDUCED_REDUNDANCY'.trim() + '\n\n'
@@ -70,7 +71,7 @@ public class AmazonS3Connector {
                 + '/' + '\n'
                 + EncodingUtil.urlEncode('max-keys', 'UTF-8') + '=' + EncodingUtil.urlEncode('2', 'UTF-8')
                 + '&' + EncodingUtil.urlEncode('prefix', 'UTF-8') + '=' + EncodingUtil.urlEncode('J', 'UTF-8')  + '\n'
-                + 'host'.toLowerCase() + ':' + (bucketName + '.s3.amazonaws.com').trim() + '\n'
+                + 'host'.toLowerCase() + ':' + (bucketName + AMAZON_S3_URL).trim() + '\n'
                 + 'x-amz-content-sha256'.toLowerCase() + ':' +  emptyStringHash + '\n'
                 + 'x-amz-date'.toLowerCase() + ':' + dtKey + '\n\n'
                 + 'host'.toLowerCase() + ';' + 'x-amz-content-sha256'.toLowerCase() + ';' + 'x-amz-date'.toLowerCase() + '\n'
@@ -97,35 +98,6 @@ public class AmazonS3Connector {
         AmazonS3ServiceOperations.putObject
             => ',SignedHeaders=date;host;x-amz-content-sha256;x-amz-date;x-amz-storage-class,Signature='
     };
-
-
-
-/*    // Canonical request
-    private Map<AmazonS3ServiceOperations, String> canonicalRequestByOperationName = new Map<AmazonS3ServiceOperations, String> {
-        // Operations on Service
-        AmazonS3ServiceOperations.getService
-            => ('GET' + '\n'
-                + '/' + '\n\n'
-                + 'host'.toLowerCase() + ':' + 's3.amazonaws.com'.trim() + '\n'
-                + 'x-amz-content-sha256'.toLowerCase() + ':' +  emptyStringHash + '\n'
-                + 'x-amz-date'.toLowerCase() + ':' + dtKey + '\n\n'
-                + 'host'.toLowerCase() + ';' + 'x-amz-content-sha256'.toLowerCase() + ';' + 'x-amz-date'.toLowerCase() + '\n'
-                + emptyStringHash),
-        // Operations on Buckets
-        AmazonS3ServiceOperations.getBucket
-            => ('GET' + '\n'
-                + '/' + '\n'
-                + EncodingUtil.urlEncode('max-keys', 'UTF-8') + '=' + EncodingUtil.urlEncode('2', 'UTF-8')
-                + '&' + EncodingUtil.urlEncode('prefix', 'UTF-8') + '=' + EncodingUtil.urlEncode('J', 'UTF-8')  + '\n'
-                + 'host'.toLowerCase() + ':' + (bucketName + '.s3.amazonaws.com').trim() + '\n'
-                + 'x-amz-content-sha256'.toLowerCase() + ':' +  emptyStringHash + '\n'
-                + 'x-amz-date'.toLowerCase() + ':' + dtKey + '\n\n'
-                + 'host'.toLowerCase() + ';' + 'x-amz-content-sha256'.toLowerCase() + ';' + 'x-amz-date'.toLowerCase() + '\n'
-                +  emptyStringHash),
-        // Operations on Objects
-        AmazonS3ServiceOperations.putObject
-            => putObjectCanonicalRequest
-    };*/
 
     public AmazonS3Connector(String IAMUserName) {
         currentUserCreds = [SELECT Id, Name, Access_Key_Id__c, Secret_Access_Key__c FROM AWS_IAM_UserCredentials__c WHERE Name =: IAMUserName];
@@ -170,9 +142,17 @@ public class AmazonS3Connector {
         return fullAuthHeader;
     }
 
-
-
-
+    private static HttpResponse performHttpRequest(HttpRequest req) {
+        if ( !Test.isRunningTest()) {
+            Http h          = new Http();
+            // Send the request, and return a response
+            HttpResponse res = h.send(req);
+            System.debug('\n\nRESPONSE' + res + '\n\n');
+            System.debug('\n\n\n' + res.getBody() + '\n\n');
+            return res;
+        }
+        return null;
+    }
 
 //==========================================================================================================================================
 //==========================================================================================================================================
@@ -194,8 +174,8 @@ public class AmazonS3Connector {
     public HttpResponse getBucket(String bucketName1) {
         HttpRequest req = new HttpRequest();
         req.setMethod('GET');
-        req.setEndpoint(this.protocol + bucketName1 + '.s3.amazonaws.com' + '/?max-keys=2&prefix=J');
-        req.setHeader('Host', bucketName1 + '.s3.amazonaws.com');
+        req.setEndpoint(this.protocol + bucketName1 + AMAZON_S3_URL + '/?max-keys=2&prefix=J');
+        req.setHeader('Host', bucketName1 + AMAZON_S3_URL);
         req.setHeader('Authorization', calculateAuthorizationHeader(AmazonS3ServiceOperations.getBucket));
         req.setHeader('x-amz-date', dtKey);
         req.setHeader('x-amz-content-sha256', emptyStringHash);
@@ -208,9 +188,9 @@ public class AmazonS3Connector {
         this.fileContentHash = EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256', blob.valueof(data)));
         HttpRequest req = new HttpRequest();
         req.setMethod('PUT');
-        req.setEndpoint(this.protocol + bucket + '.s3.amazonaws.com' + '/' + this.fileName);
+        req.setEndpoint(this.protocol + bucket + AMAZON_S3_URL + '/' + this.fileName);
         req.setBodyAsBlob(Blob.valueOf(data));
-        req.setHeader('Host', bucket + '.s3.amazonaws.com');
+        req.setHeader('Host', bucket + AMAZON_S3_URL);
         req.setHeader('date', Datetime.now().formatGMT('EEE, d MMM yyyy HH:mm:ss z'));
         req.setHeader('Content-Type', 'text/plain');
         req.setHeader('Authorization', calculateAuthorizationHeader(AmazonS3ServiceOperations.putObject));
@@ -218,18 +198,6 @@ public class AmazonS3Connector {
         req.setHeader('x-amz-content-sha256', fileContentHash);
         req.setHeader('x-amz-storage-class', 'REDUCED_REDUNDANCY');
         return performHttpRequest(req);
-    }
-
-    private static HttpResponse performHttpRequest(HttpRequest req) {
-        if ( !Test.isRunningTest()) {
-            Http h          = new Http();
-            // Send the request, and return a response
-            HttpResponse res = h.send(req);
-            System.debug('\n\nRESPONSE' + res + '\n\n');
-            System.debug('\n\n\n' + res.getBody() + '\n\n');
-            return res;
-        }
-        return null;
     }
 
 }

@@ -1,5 +1,4 @@
 public class AmazonS3AuthorizationFramework {
-    public final String emptyStringHash = 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855';
     public String dtKey = System.now().formatGMT('yyyyMMdd\'T\'HHmmss\'Z\'');
     public String region = 'eu-west-1';
     public String fileContentHash {
@@ -9,13 +8,12 @@ public class AmazonS3AuthorizationFramework {
 
     @testVisible
     private AWS_IAM_UserCredentials__c currentUserCreds;
+
     @testVisible
     private String dateKey = System.now().formatGMT('yyyyMMdd');
+
     @testVisible
     private String dtKeyEEE = System.now().formatGMT('EEE, d MMM yyyy HH:mm:ss z');
-    @testVisible
-    private String bucketName = 'logdog';
-
 
     private String scope {
         get {
@@ -32,13 +30,12 @@ public class AmazonS3AuthorizationFramework {
         set;
     }
 
-
     String putObjectCanonicalRequest {
         get {
             return (AmazonS3Constants.HTTP_METHOD_PUT + '\n'
                 + '/' + EncodingUtil.urlEncode(this.fileName, AmazonS3Constants.ENCODING_SCHEME_UTF8) + '\n\n'
                 + 'date'.toLowerCase() + ':'+ dtKeyEEE.trim() + '\n'//  + dtKey + '\n'//+ Datetime.now().format('EEE, d MMM yyyy HH:mm:ss z') + '\n' //Fri, 24 May 2013 00:00:00 GMT
-                + 'host'.toLowerCase() + ':' + (bucketName + AmazonS3Constants.AMAZON_S3_URL).trim() + '\n'
+                + 'host'.toLowerCase() + ':' + (this.currentUserCreds.Bucket_Name__c + AmazonS3Constants.AMAZON_S3_URL).trim() + '\n'
                 + 'x-amz-content-sha256'.toLowerCase() + ':' +  this.fileContentHash + '\n'
                 + 'x-amz-date'.toLowerCase() + ':' + dtKey + '\n'
                 + 'x-amz-storage-class'.toLowerCase() + ':' + 'REDUCED_REDUNDANCY'.trim() + '\n\n'
@@ -52,10 +49,10 @@ public class AmazonS3AuthorizationFramework {
             return (AmazonS3Constants.HTTP_METHOD_GET + '\n'
                 + '/' + '\n\n'
                 + 'host'.toLowerCase() + ':' + 's3.amazonaws.com'.trim() + '\n'
-                + 'x-amz-content-sha256'.toLowerCase() + ':' +  emptyStringHash + '\n'
+                + 'x-amz-content-sha256'.toLowerCase() + ':' +  AmazonS3Constants.EMPTY_STRING_HASH + '\n'
                 + 'x-amz-date'.toLowerCase() + ':' + dtKey + '\n\n'
                 + 'host'.toLowerCase() + ';' + 'x-amz-content-sha256'.toLowerCase() + ';' + 'x-amz-date'.toLowerCase() + '\n'
-                + emptyStringHash);
+                + AmazonS3Constants.EMPTY_STRING_HASH);
         }
     }
 
@@ -65,12 +62,23 @@ public class AmazonS3AuthorizationFramework {
                 + '/' + '\n'
                 + EncodingUtil.urlEncode('max-keys', AmazonS3Constants.ENCODING_SCHEME_UTF8) + '=' + EncodingUtil.urlEncode('2', AmazonS3Constants.ENCODING_SCHEME_UTF8)
                 + '&' + EncodingUtil.urlEncode('prefix', AmazonS3Constants.ENCODING_SCHEME_UTF8) + '=' + EncodingUtil.urlEncode('J', AmazonS3Constants.ENCODING_SCHEME_UTF8)  + '\n'
-                + 'host'.toLowerCase() + ':' + (bucketName + AmazonS3Constants.AMAZON_S3_URL).trim() + '\n'
-                + 'x-amz-content-sha256'.toLowerCase() + ':' +  emptyStringHash + '\n'
+                + 'host'.toLowerCase() + ':' + (this.currentUserCreds.Bucket_Name__c + AmazonS3Constants.AMAZON_S3_URL).trim() + '\n'
+                + 'x-amz-content-sha256'.toLowerCase() + ':' +  AmazonS3Constants.EMPTY_STRING_HASH + '\n'
                 + 'x-amz-date'.toLowerCase() + ':' + dtKey + '\n\n'
                 + 'host'.toLowerCase() + ';' + 'x-amz-content-sha256'.toLowerCase() + ';' + 'x-amz-date'.toLowerCase() + '\n'
-                +  emptyStringHash);
+                +  AmazonS3Constants.EMPTY_STRING_HASH);
         }
+    }
+
+    public AmazonS3AuthorizationFramework(String IAMUserName) {
+        this.currentUserCreds = [SELECT Id
+                                       ,Name
+                                       ,Access_Key_Id__c
+                                       ,Secret_Access_Key__c
+                                       ,Bucket_Name__c
+                                 FROM AWS_IAM_UserCredentials__c
+                                 WHERE Name =: IAMUserName];
+        System.debug(LoggingLevel.INFO, 'AmazonS3Connector has been constructed');
     }
 
     private String getCanonicalRequest(AmazonS3ServiceOperations operation) {
@@ -92,11 +100,6 @@ public class AmazonS3AuthorizationFramework {
         AmazonS3ServiceOperations.putObject
             => ',SignedHeaders=date;host;x-amz-content-sha256;x-amz-date;x-amz-storage-class,Signature='
     };
-
-    public AmazonS3AuthorizationFramework(String IAMUserName) {
-        this.currentUserCreds = [SELECT Id, Name, Access_Key_Id__c, Secret_Access_Key__c FROM AWS_IAM_UserCredentials__c WHERE Name =: IAMUserName];
-        System.debug(LoggingLevel.INFO, 'AmazonS3Connector has been constructed');
-    }
 
     @testVisible
     private String generateStringToSign(AmazonS3ServiceOperations operation) {

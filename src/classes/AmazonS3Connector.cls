@@ -1,6 +1,7 @@
 
 public class AmazonS3Connector {
     private String protocol = 'https://';
+    @testVisible
     private AmazonS3AuthorizationFramework auth;
 
     public AmazonS3Connector(String IAMUserName) {
@@ -31,7 +32,7 @@ public class AmazonS3Connector {
         req.setHeader('Host', 's3.amazonaws.com');
         req.setHeader('Authorization', this.auth.calculateAuthorizationHeader(AmazonS3ServiceOperations.getService));
         req.setHeader('x-amz-date', this.auth.dtKey);
-        req.setHeader('x-amz-content-sha256', this.auth.emptyStringHash);
+        req.setHeader('x-amz-content-sha256', AmazonS3Constants.EMPTY_STRING_HASH);
         System.debug('\n\n request:\n' + req + '\n\n');
         return performHttpRequest(req);
     }
@@ -43,7 +44,7 @@ public class AmazonS3Connector {
         req.setHeader('Host', bucketNameParam + AmazonS3Constants.AMAZON_S3_URL);
         req.setHeader('Authorization', this.auth.calculateAuthorizationHeader(AmazonS3ServiceOperations.getBucket));
         req.setHeader('x-amz-date', this.auth.dtKey);
-        req.setHeader('x-amz-content-sha256', this.auth.emptyStringHash);
+        req.setHeader('x-amz-content-sha256', AmazonS3Constants.EMPTY_STRING_HASH);
         System.debug('\n\n request:\n' + req + '\n\n');
         return performHttpRequest(req);
     }

@@ -25,6 +25,11 @@
         <name>CustomTab</name>
     </types>
     <types>
+        <members>AWSS3</members>
+        <members>AWSS3/AWSS3_AppLogo.jpg</members>
+        <name>Document</name>
+    </types>
+    <types>
         <members>AWSS3_Bucket_Connection__c-Amazon S3 Bucket Connection Layout</members>
         <members>AWSS3_Bucket__c-Amazon S3 Bucket Layout</members>
         <members>AWS_IAM_UserCredentials__c-Amazon S3 Credential Layout</members>

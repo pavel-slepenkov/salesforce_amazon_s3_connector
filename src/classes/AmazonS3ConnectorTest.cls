@@ -23,26 +23,42 @@ public class AmazonS3ConnectorTest {
 
     @isTest(SeeAllData=true)
     private static void validateGetService() {
-        AmazonS3Connector connector = new AmazonS3Connector('Root');
+        AmazonS3Connector connector = new AmazonS3Connector('logdog_Root');
         HttpResponse response = connector.getService();
         System.debug(LoggingLevel.DEBUG, response);
     }
 
     @isTest(SeeAllData=true)
     private static void validateGetBucket() {
-        AmazonS3Connector connector = new AmazonS3Connector('Root');
+        AmazonS3Connector connector = new AmazonS3Connector('logdog_Root');
         HttpResponse response = connector.getBucket('logdog');
         System.debug(LoggingLevel.DEBUG, response);
     }
 
-    @isTest
-    private static void validateSignatureCalculationForGetBucket() {
+
+    private static void initEnv() {
         AWS_IAM_UserCredentials__c creds =
             new AWS_IAM_UserCredentials__c(Name = 'Test',
                                            Secret_Access_Key__c = 'wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY',
-                                           Access_Key_Id__c = 'AKIAIOSFODNN7EXAMPLE',
-                                           Bucket_Name__c = mockBucketName);
+                                           Access_Key_Id__c = 'AKIAIOSFODNN7EXAMPLE');
         insert creds;
+        AWSS3_Bucket__c bucket = new AWSS3_Bucket__c(
+            name = mockBucketName,
+            Region__c = mockRegion
+        );
+        insert bucket;
+
+        AWSS3_Bucket_Connection__c connection = new AWSS3_Bucket_Connection__c(
+            Name = 'Test',
+            AWSS3_Bucket__c = bucket.Id,
+            AWSS3_Credential__c = creds.Id
+        );
+        insert connection;
+    }
+
+    @isTest
+    private static void validateSignatureCalculationForGetBucket() {
+        initEnv();
         AmazonS3Connector connector = new AmazonS3Connector('Test');
         connector.auth.dateKey          = mockDate;
         connector.auth.dtKey            = mockDateTime;
@@ -52,12 +68,7 @@ public class AmazonS3ConnectorTest {
 
     @isTest
     private static void validateSignatureCalculationForPutObject() {
-        AWS_IAM_UserCredentials__c creds =
-            new AWS_IAM_UserCredentials__c(Name = 'Test',
-                                           Secret_Access_Key__c = 'wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY',
-                                           Access_Key_Id__c = 'AKIAIOSFODNN7EXAMPLE',
-                                           Bucket_Name__c = mockBucketName);
-        insert creds;
+        initEnv();
         AmazonS3Connector connector = new AmazonS3Connector('Test');
         connector.auth.dateKey          = mockDate;
         connector.auth.dtKey            = mockDateTime;

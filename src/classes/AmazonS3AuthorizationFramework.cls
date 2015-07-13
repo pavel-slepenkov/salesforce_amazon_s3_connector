@@ -1,6 +1,5 @@
 public class AmazonS3AuthorizationFramework {
     public String dtKey = System.now().formatGMT('yyyyMMdd\'T\'HHmmss\'Z\'');
-    public String region = 'eu-west-1';
     public String fileContentHash {
         get;
         set;
@@ -15,9 +14,10 @@ public class AmazonS3AuthorizationFramework {
     @testVisible
     private String dtKeyEEE = System.now().formatGMT('EEE, d MMM yyyy HH:mm:ss z');
 
+    // variable name is came from AWS terminology
     private String scope {
         get {
-            scope = dateKey + '/' + region + '/s3/aws4_request';
+            scope = dateKey + '/' + currentUserCreds.Region__c + '/s3/aws4_request';
             return scope;
         }
         private set;
@@ -76,6 +76,7 @@ public class AmazonS3AuthorizationFramework {
                                        ,Access_Key_Id__c
                                        ,Secret_Access_Key__c
                                        ,Bucket_Name__c
+                                       ,Region__c
                                  FROM AWS_IAM_UserCredentials__c
                                  WHERE Name =: IAMUserName];
         System.debug(LoggingLevel.INFO, 'AmazonS3Connector has been constructed');
@@ -121,7 +122,7 @@ public class AmazonS3AuthorizationFramework {
         //signing key = HMAC-SHA256(HMAC-SHA256(HMAC-SHA256(HMAC-SHA256("AWS4" + "<YourSecretAccessKey>","20130524"),"us-east-1"),"s3"),"aws4_request")
         System.debug('\n-------------------------------  Task 3: Calculate Signature --------------------------------');
         Blob dateKey1             = Crypto.generateMac(AmazonS3Constants.GENERATE_MAC_ALGORITHM_NAME, blob.valueOf(dateKey), blob.valueOf('AWS4' + this.currentUserCreds.Secret_Access_Key__c));
-        Blob dateRegionKey        = Crypto.generateMac(AmazonS3Constants.GENERATE_MAC_ALGORITHM_NAME, blob.valueOf(region), dateKey1);
+        Blob dateRegionKey        = Crypto.generateMac(AmazonS3Constants.GENERATE_MAC_ALGORITHM_NAME, blob.valueOf(currentUserCreds.Region__c), dateKey1);
         Blob dateRegionServiceKey = Crypto.generateMac(AmazonS3Constants.GENERATE_MAC_ALGORITHM_NAME, blob.valueOf('s3'), dateRegionKey);
         Blob signingKey           = Crypto.generateMac(AmazonS3Constants.GENERATE_MAC_ALGORITHM_NAME, blob.valueOf('aws4_request'), dateRegionServiceKey);
         String signature = EncodingUtil.convertToHex(Crypto.generateMac(AmazonS3Constants.GENERATE_MAC_ALGORITHM_NAME, blob.valueOf(generateStringToSign(operation)), signingKey));
@@ -134,6 +135,12 @@ public class AmazonS3AuthorizationFramework {
                                 + signedHeaderByOperationName.get(operation) + calculateSignature(operation);
         System.debug('\nfullAuthHeader ' + fullAuthHeader);
         return fullAuthHeader;
+    }
+
+    public void setRegion(String region) {
+        if (this.currentUserCreds != null) {
+            currentUserCreds.Region__c = region;
+        }
     }
 
 }

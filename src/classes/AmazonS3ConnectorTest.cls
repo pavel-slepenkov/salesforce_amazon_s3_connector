@@ -46,7 +46,7 @@ public class AmazonS3ConnectorTest {
         AmazonS3Connector connector = new AmazonS3Connector('Test');
         connector.auth.dateKey          = mockDate;
         connector.auth.dtKey            = mockDateTime;
-        connector.auth.region           = mockRegion;
+        connector.auth.setRegion(mockRegion);
         System.assertEquals('34b48302e7b5fa45bde8084f4b7868a86f0a534bc59db6670ed5711ef69dc6f7', connector.auth.calculateSignature(AmazonS3ServiceOperations.getBucket));
     }
 
@@ -62,13 +62,11 @@ public class AmazonS3ConnectorTest {
         connector.auth.dateKey          = mockDate;
         connector.auth.dtKey            = mockDateTime;
         connector.auth.dtKeyEEE         = 'Fri, 24 May 2013 00:00:00 GMT';
-        connector.auth.region           = mockRegion;
         connector.auth.fileName         = 'test$file.text';
+        connector.auth.setRegion(mockRegion);
         connector.auth.fileContentHash = EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256', blob.valueof('Welcome to Amazon S3.')));
         System.assert(connector.auth.generateStringToSign(AmazonS3ServiceOperations.putObject).contains('9e0e90d9c76de8fa5b200d8c849cd5b8dc7a3be3951ddb7f6a76b4158342019d'));
         System.assertEquals('98ad721746da40c64f1a55b78f14c238d841ea1380cd77a1b5971af0ece108bd', connector.auth.calculateSignature(AmazonS3ServiceOperations.putObject));
     }
-
-
 
 }

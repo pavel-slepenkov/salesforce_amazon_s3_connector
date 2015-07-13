@@ -1,5 +1,5 @@
-
 public class AmazonS3Connector {
+    private final String GET_SERVICE_REGION = 'us-east-1';
     private String protocol = 'https://';
     @testVisible
     private AmazonS3AuthorizationFramework auth;
@@ -25,7 +25,7 @@ public class AmazonS3Connector {
 
     public HttpResponse getService() {
         // Set request's specific variable
-        this.auth.region = 'us-east-1';
+        this.auth.setRegion(GET_SERVICE_REGION);
         HttpRequest req = new HttpRequest();
         req.setMethod(AmazonS3Constants.HTTP_METHOD_GET);
         req.setEndpoint(this.protocol + 's3.amazonaws.com');

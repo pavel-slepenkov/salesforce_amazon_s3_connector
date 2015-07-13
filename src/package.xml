@@ -5,7 +5,19 @@
         <name>ApexClass</name>
     </types>
     <types>
-        <members>AWS_IAM_UserCredentials__c</members>
+        <members>*</members>
+        <name>ApexPage</name>
+    </types>
+    <types>
+        <members>Amazon_S3_Connector</members>
+        <name>CustomApplication</name>
+    </types>
+    <types>
+        <members>*</members>
+        <name>CustomLabels</name>
+    </types>
+    <types>
+        <members>*</members>
         <name>CustomObject</name>
     </types>
     <types>
@@ -13,8 +25,14 @@
         <name>CustomTab</name>
     </types>
     <types>
+        <members>AWSS3_Bucket_Connection__c-Amazon S3 Bucket Connection Layout</members>
+        <members>AWSS3_Bucket__c-Amazon S3 Bucket Layout</members>
         <members>AWS_IAM_UserCredentials__c-Amazon S3 Credential Layout</members>
         <name>Layout</name>
+    </types>
+    <types>
+        <members>Admin</members>
+        <name>Profile</name>
     </types>
     <version>34.0</version>
 </Package>

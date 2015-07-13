@@ -1,0 +1,106 @@
+<project name="Logger Test Env." basedir="." xmlns:sf="antlib:com.salesforce" default="testDeploy">
+<!--
+@author:    Pavel Slepenkov (pavel.slepenkov@gmail.com)
+@date:      13 July 2015
+
+************************************************* Using ****************************************************************
+
+1. Each developer works on his own sandbox. When the task is done developer should to ensure that his changes doesn't
+break trunk and apex unit test are ok. For this purpose developer should to run verification task on the following
+manner:
+
+>> ant testDeploy -Denv=qa
+(qa - name of the integration and testing sandbox and it can be different)
+
+in case succusfull verification developer might to commit his changes to version control.
+
+All changes would be deployed to ci sandbox automatically by CI-tool. Developer should to ensure that build is "green"
+after his commit.
+
+2. The good practice is an using migration tool for install latest changes from version control to developer sandbox
+e.g.
+>> ant deploy -Denv=devpslep
+
+3. In some cases you needs to perform deployment in a several steps, for these purposes you can use PreDeploy &
+PostDeploy tasks.
+
+>> ant postDeploy -Denv=ci
+
+4. For removing metadata from sandboxes & prod you can use destructiveChanges.xml
+You can find the list of available metadata components by the following link:
+http://www.salesforce.com/us/developer/docs/daas/index_Left.htm#StartTopic=Content/daas_package.htm
+
+
+************************************************* Additional info ******************************************************
+maxPoll * pollWaitMillis == deployment time limit
+e.g.
+pollWaitMillis="1500" * maxPoll="120" = 180000 milliseconds == 3 mins
+pollWaitMillis="15000" * maxPoll="60" = 900.000 milliseconds == 15 mins
+you can manage these parameters.
+
+
+Parameters which shouldn't be changed:
+runAllTests = "false" - in your organization can be installed third-party packages with their own tests suites. You don't
+need to run these tests.
+
+rollbackOnError = "true" - indicates whether any failure causes a complete rollback (true) or not (false)
+
+-->
+
+
+    <taskdef resource="com/salesforce/antlib.xml" classPath="libs/ant-salesforce.jar" uri="antlib:com.salesforce"/>
+    <property name="sf.url.prod" value="https://login.salesforce.com" />
+<!--     <property name="sf.serverurl" value="${sf.url}" /> -->
+    <property name="sf.maxPoll" value="2000" />
+    <property name="target" value="src" />
+    <property name="rollbackOnError" value="true" />
+    <property name="logtype" value="None" />
+    <property file="build.properties"/>
+    <property environment="dev"/>
+
+    <target name="testDeploy">
+      <!-- Verify the abbility to upload the contents of the "src" package -->
+      <sf:deploy username="${sf.username}" password="${sf.password}" serverurl="${sf.serverurl}" maxPoll="${sf.maxPoll}" deployRoot="src" checkOnly="true" runAllTests="true"/>
+    </target>
+
+    <target name="deploy" description="Upload the contents of the directory and run all test" >
+      <!-- Upload the contents of the "src" directory and run all test -->
+      <sf:deploy username="${sf.username}"
+                 password="${sf.password}"
+                 serverurl="${sf.serverurl}"
+                 maxPoll="${sf.maxPoll}"
+                 deployRoot="src"
+                 runAllTests="true"
+                 pollWaitMillis="150">
+      </sf:deploy>
+    </target>
+
+    <target name="quickDeploy" description="Upload the contents of the directory and WITHOUT running test" >
+      <!-- Upload the contents of the "src" directory and run all test -->
+      <sf:deploy username="${sf.username}" 
+                 password="${sf.password}"
+                 serverurl="${sf.serverurl}"
+                 maxPoll="${sf.maxPoll}"
+                 deployRoot="src"
+                 runAllTests="false"
+                 pollWaitMillis="150">
+      </sf:deploy>
+    </target>
+
+    <!-- retriev metadata from org into local project folder \src (by default), but it might be overridden in command line -->
+    <target name="retrieve" description="Retrieves metadata from ${sf.env} to ${target}" >
+      <mkdir dir="${target}"/>
+      <sf:retrieve username="${sf.username}${sf.env}" password="${sf.password}" serverurl="${sf.serverurl}" retrieveTarget="${target}" unpackaged="package.xml"/>
+    </target>
+
+    <!-- Retrieve the information of all items of a particular metadata type -->
+    <target name="listMetadata" description="Retrieve the information of all items of a particular metadata type" >
+      <sf:listMetadata username="${sf.username}" password="${sf.password}" serverurl="${sf.serverurl}" metadataType="${sf.metadataType}"/>
+    </target>
+
+    <!-- Retrieve the information on all supported metadata type -->
+    <target name="describeMetadata" description="Retrieve the information on all supported metadata type">
+      <sf:describeMetadata username="${sf.username}" password="${sf.password}" serverurl="${sf.serverurl}"/>
+    </target>
+
+</project>

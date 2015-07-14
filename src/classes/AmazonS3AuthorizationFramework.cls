@@ -17,8 +17,7 @@ public class AmazonS3AuthorizationFramework {
     // variable name is came from AWS terminology
     private String scope {
         get {
-            scope = dateKey + '/' + bucketConnection.AWSS3_Bucket__r.Region__c + '/s3/aws4_request';
-            return scope;
+            return dateKey + '/' + bucketConnection.AWSS3_Bucket__r.Region__c + '/s3/aws4_request';
         }
         private set;
     }
@@ -41,6 +40,33 @@ public class AmazonS3AuthorizationFramework {
                 + 'x-amz-storage-class'.toLowerCase() + ':' + 'REDUCED_REDUNDANCY'.trim() + '\n\n'
                 + 'date'.toLowerCase() + ';' + 'host'.toLowerCase() + ';' + 'x-amz-content-sha256'.toLowerCase() + ';' + 'x-amz-date'.toLowerCase() + ';' + 'x-amz-storage-class'.toLowerCase() + '\n'
                 +  this.fileContentHash);
+        }
+    }
+
+
+/*
+GET
+/test.txt
+
+host:examplebucket.s3.amazonaws.com
+range:bytes=0-9
+x-amz-content-sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+x-amz-date:20130524T000000Z
+
+host;range;x-amz-content-sha256;x-amz-date
+e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+ */
+    String getObjectCanonicalRequest {
+        get {
+            return (AmazonS3Constants.HTTP_METHOD_GET + '\n'
+                + '/' + EncodingUtil.urlEncode(this.fileName, AmazonS3Constants.ENCODING_SCHEME_UTF8) + '\n\n'
+                + 'host'.toLowerCase() + ':' + (this.bucketConnection.AWSS3_Bucket__r.Name + AmazonS3Constants.AMAZON_S3_URL).trim() + '\n'
+                + 'range'.toLowerCase() + ':' + 'bytes=0-'.trim() + '\n'
+                + 'x-amz-content-sha256'.toLowerCase() + ':' +  AmazonS3Constants.EMPTY_STRING_HASH + '\n'
+                + 'x-amz-date'.toLowerCase() + ':' + dtKey + '\n\n'
+                + 'host'.toLowerCase() + ';' + 'range'.toLowerCase() + ';' + 'x-amz-content-sha256'.toLowerCase() + ';' + 'x-amz-date'.toLowerCase() + '\n'
+                +  AmazonS3Constants.EMPTY_STRING_HASH
+            );
         }
     }
 
@@ -88,6 +114,8 @@ public class AmazonS3AuthorizationFramework {
             return getBucketCanonicalRequest;
         } else if (operation == AmazonS3ServiceOperations.putObject) {
             return putObjectCanonicalRequest;
+        } else if (operation == AmazonS3ServiceOperations.getObject){
+            return getObjectCanonicalRequest;
         }
         return null;
     }
@@ -98,15 +126,17 @@ public class AmazonS3AuthorizationFramework {
         AmazonS3ServiceOperations.getBucket
             => ',SignedHeaders=host;x-amz-content-sha256;x-amz-date,Signature=',
         AmazonS3ServiceOperations.putObject
-            => ',SignedHeaders=date;host;x-amz-content-sha256;x-amz-date;x-amz-storage-class,Signature='
+            => ',SignedHeaders=date;host;x-amz-content-sha256;x-amz-date;x-amz-storage-class,Signature=',
+        AmazonS3ServiceOperations.getObject
+            => ',SignedHeaders=host;range;x-amz-content-sha256;x-amz-date,Signature='
     };
 
     @testVisible
     private String generateStringToSign(AmazonS3ServiceOperations operation) {
         // Task 2: Create a String to Sign
-        System.debug(LoggingLevel.INFO, '\n-------------------------------  Task 2: Create a String to Sign --------------------------------');
+        System.debug(LoggingLevel.INFO, '\n\n-------------------------------  Task 2: Create a String to Sign --------------------------->>>');
         System.debug(LoggingLevel.INFO, 'canonicalRequest:__________________________________________________________\n' + getCanonicalRequest(operation));
-        System.debug(LoggingLevel.INFO, '_____________________________________________________________________________');
+        System.debug(LoggingLevel.INFO, '_____________________________________________________________________________<<<');
         String stringToSing = 'AWS4-HMAC-SHA256' + '\n'
                               + dtKey + '\n'
                               + scope + '\n'
@@ -119,7 +149,7 @@ public class AmazonS3AuthorizationFramework {
     private String calculateSignature(AmazonS3ServiceOperations operation) {
         // Task 3: Calculate Signature
         //signing key = HMAC-SHA256(HMAC-SHA256(HMAC-SHA256(HMAC-SHA256("AWS4" + "<YourSecretAccessKey>","20130524"),"us-east-1"),"s3"),"aws4_request")
-        System.debug('\n-------------------------------  Task 3: Calculate Signature --------------------------------');
+        System.debug('\n\n-------------------------------  Task 3: Calculate Signature -------------------------------->>>');
         Blob dateKey1             = Crypto.generateMac(AmazonS3Constants.GENERATE_MAC_ALGORITHM_NAME, blob.valueOf(dateKey), blob.valueOf('AWS4' + this.bucketConnection.AWSS3_Credential__r.Secret_Access_Key__c));
         Blob dateRegionKey        = Crypto.generateMac(AmazonS3Constants.GENERATE_MAC_ALGORITHM_NAME, blob.valueOf(bucketConnection.AWSS3_Bucket__r.Region__c), dateKey1);
         Blob dateRegionServiceKey = Crypto.generateMac(AmazonS3Constants.GENERATE_MAC_ALGORITHM_NAME, blob.valueOf('s3'), dateRegionKey);
@@ -141,5 +171,8 @@ public class AmazonS3AuthorizationFramework {
             bucketConnection.AWSS3_Bucket__r.Region__c = region;
         }
     }
+
+
+
 
 }

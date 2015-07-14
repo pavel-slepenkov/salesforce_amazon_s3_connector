@@ -4,8 +4,8 @@ public class AmazonS3Connector {
     @testVisible
     private AmazonS3AuthorizationFramework auth;
 
-    public AmazonS3Connector(String IAMUserName) {
-        this.auth = new AmazonS3AuthorizationFramework(IAMUserName);
+    public AmazonS3Connector(String bucketConnectionName) {
+        this.auth = new AmazonS3AuthorizationFramework(bucketConnectionName);
     }
 
     private static HttpResponse performHttpRequest(HttpRequest req) {
@@ -49,6 +49,11 @@ public class AmazonS3Connector {
         return performHttpRequest(req);
     }
 
+
+//------------------------------------------------------------------------------------------------------------------------------------------
+//          OBJECT OPERATIONS
+//------------------------------------------------------------------------------------------------------------------------------------------
+
     public HttpResponse putObject(String fName, String bucket, String data) {
         this.auth.fileName = fName;
         this.auth.fileContentHash = EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256', blob.valueof(data)));
@@ -65,5 +70,31 @@ public class AmazonS3Connector {
         req.setHeader('x-amz-storage-class', 'REDUCED_REDUNDANCY');
         return performHttpRequest(req);
     }
+
+
+
+    /*
+        GET /ObjectName HTTP/1.1
+        Host: BucketName.s3.amazonaws.com
+        Date: date
+        Authorization: authorization string (see Authenticating Requests (AWS Signature Version 4))
+        Range:bytes=byte_range
+     */
+    public HttpResponse getObject(AWSS3Object s3Object) {
+        this.auth.fileName = s3Object.fileName;
+        HttpRequest getObjectRequest = new HttpRequest();
+        getObjectRequest.setMethod(AmazonS3Constants.HTTP_METHOD_GET);
+        getObjectRequest.setEndpoint(s3Object.endpoint);
+        getObjectRequest.setHeader('Host', s3Object.host);
+        getObjectRequest.setHeader('Date', Datetime.now().formatGMT('EEE, d MMM yyyy HH:mm:ss z'));
+        getObjectRequest.setHeader('range', 'bytes=0-');
+        getObjectRequest.setHeader('Authorization', this.auth.calculateAuthorizationHeader(AmazonS3ServiceOperations.getObject));
+        getObjectRequest.setHeader('x-amz-date', this.auth.dtKey);
+        getObjectRequest.setHeader('x-amz-content-sha256', AmazonS3Constants.EMPTY_STRING_HASH);
+        return performHttpRequest(getObjectRequest);
+    }
+
+
+
 
 }

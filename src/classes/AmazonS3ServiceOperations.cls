@@ -5,6 +5,9 @@
  */
 public enum AmazonS3ServiceOperations {
 
-    getService, getBucket, putObject
+    getService,
+    getBucket,
+    putObject,
+    getObject
 
 }

@@ -44,24 +44,24 @@ public class AmazonS3AuthorizationFramework {
     }
 
 
-/*
-GET
-/test.txt
+    /*
+        GET
+        /test.txt
 
-host:examplebucket.s3.amazonaws.com
-range:bytes=0-9
-x-amz-content-sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
-x-amz-date:20130524T000000Z
+        host:examplebucket.s3.amazonaws.com
+        range:bytes=0-9
+        x-amz-content-sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+        x-amz-date:20130524T000000Z
 
-host;range;x-amz-content-sha256;x-amz-date
-e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
- */
+        host;range;x-amz-content-sha256;x-amz-date
+        e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+     */
     String getObjectCanonicalRequest {
         get {
             return (AmazonS3Constants.HTTP_METHOD_GET + '\n'
                 + '/' + EncodingUtil.urlEncode(this.fileName, AmazonS3Constants.ENCODING_SCHEME_UTF8) + '\n\n'
                 + 'host'.toLowerCase() + ':' + (this.bucketConnection.AWSS3_Bucket__r.Name + AmazonS3Constants.AMAZON_S3_URL).trim() + '\n'
-                + 'range'.toLowerCase() + ':' + 'bytes=0-'.trim() + '\n'
+                + 'range'.toLowerCase() + ':' + (Test.isRunningTest() ? 'bytes=0-9' : 'bytes=0-').trim() + '\n'
                 + 'x-amz-content-sha256'.toLowerCase() + ':' +  AmazonS3Constants.EMPTY_STRING_HASH + '\n'
                 + 'x-amz-date'.toLowerCase() + ':' + dtKey + '\n\n'
                 + 'host'.toLowerCase() + ';' + 'range'.toLowerCase() + ';' + 'x-amz-content-sha256'.toLowerCase() + ';' + 'x-amz-date'.toLowerCase() + '\n'

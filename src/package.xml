@@ -28,6 +28,9 @@
         <name>CustomObject</name>
     </types>
     <types>
+        <members>AWSS3_Bucket_Connection__c</members>
+        <members>AWSS3_Bucket__c</members>
+        <members>AWSS3_Home</members>
         <members>AWS_IAM_UserCredentials__c</members>
         <name>CustomTab</name>
     </types>

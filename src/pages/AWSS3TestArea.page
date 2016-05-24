@@ -1,0 +1,10 @@
+<apex:page docType="html5" showHeader="true" sidebar="false">
+    <html>
+    <head>
+
+    </head>
+    <body>
+
+    </body>
+    </html>
+</apex:page>

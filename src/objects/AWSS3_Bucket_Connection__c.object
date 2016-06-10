@@ -56,27 +56,29 @@
     <enableStreamingApi>true</enableStreamingApi>
     <fields>
         <fullName>AWSS3_Bucket__c</fullName>
-        <deleteConstraint>SetNull</deleteConstraint>
         <externalId>false</externalId>
         <label>Amazon S3 Bucket</label>
         <referenceTo>AWSS3_Bucket__c</referenceTo>
         <relationshipLabel>Amazon S3 Bucket Connections</relationshipLabel>
         <relationshipName>Amazon_S3_Bucket_Connections</relationshipName>
-        <required>false</required>
+        <relationshipOrder>0</relationshipOrder>
+        <reparentableMasterDetail>false</reparentableMasterDetail>
         <trackTrending>false</trackTrending>
-        <type>Lookup</type>
+        <type>MasterDetail</type>
+        <writeRequiresMasterRead>false</writeRequiresMasterRead>
     </fields>
     <fields>
         <fullName>AWSS3_Credential__c</fullName>
-        <deleteConstraint>SetNull</deleteConstraint>
         <externalId>false</externalId>
         <label>Amazon S3 Credential</label>
         <referenceTo>AWS_IAM_UserCredentials__c</referenceTo>
         <relationshipLabel>Amazon S3 Bucket Connections</relationshipLabel>
         <relationshipName>Amazon_S3_Bucket_Connections</relationshipName>
-        <required>false</required>
+        <relationshipOrder>1</relationshipOrder>
+        <reparentableMasterDetail>false</reparentableMasterDetail>
         <trackTrending>false</trackTrending>
-        <type>Lookup</type>
+        <type>MasterDetail</type>
+        <writeRequiresMasterRead>false</writeRequiresMasterRead>
     </fields>
     <label>Amazon S3 Bucket Connection</label>
     <listViews>
@@ -90,5 +92,5 @@
     </nameField>
     <pluralLabel>Amazon S3 Bucket Connections</pluralLabel>
     <searchLayouts/>
-    <sharingModel>ReadWrite</sharingModel>
+    <sharingModel>ControlledByParent</sharingModel>
 </CustomObject>
